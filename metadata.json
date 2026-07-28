@@ -1,0 +1,6 @@
+{
+  "name": "Otniel",
+  "description": "Plataforma inteligente Otniel de análise de mercado petrolífero, previsões de preço com modelos de IA, alertas, análise de sentimento NLP e simulação de cenários.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

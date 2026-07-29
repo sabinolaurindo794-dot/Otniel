@@ -357,9 +357,21 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
     reader.readAsText(file);
   };
 
-  // Start New Interview Session
-  const handleStartInterview = async () => {
-    if (!cvText.trim() || !jobDescription.trim()) {
+  // Start New Interview Session with explicit custom or override params
+  const handleStartInterview = async (overrideParams?: {
+    candidateName?: string;
+    targetRole?: string;
+    companyName?: string;
+    cvText?: string;
+    jobDescription?: string;
+  }) => {
+    const finalCv = overrideParams?.cvText || cvText;
+    const finalJob = overrideParams?.jobDescription || jobDescription;
+    const finalName = overrideParams?.candidateName || candidateName;
+    const finalRole = overrideParams?.targetRole || targetRole;
+    const finalCompany = overrideParams?.companyName || companyName;
+
+    if (!finalCv.trim() || !finalJob.trim()) {
       alert("Por favor forneça o CV e a Descrição da Vaga para personalizar a entrevista.");
       return;
     }
@@ -368,17 +380,28 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
     try {
       const res = await fetch("/api/interview/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...userHeaders,
+        },
         body: JSON.stringify({
-          candidateName,
-          targetRole,
-          companyName,
-          cvText,
-          jobDescription,
+          candidateName: finalName,
+          targetRole: finalRole,
+          companyName: finalCompany,
+          cvText: finalCv,
+          jobDescription: finalJob,
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = {};
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Resposta do servidor em formato inválido (${res.status}): ${text.slice(0, 100)}`);
+      }
+
       if (data.status === "success" && data.session) {
         setCurrentSession(data.session);
         setActiveTab("interview");
@@ -392,9 +415,9 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
       } else {
         alert(data.error || "Erro ao iniciar sessão de entrevista.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error starting interview", err);
-      alert("Falha na comunicação com o servidor seguro de IA.");
+      alert(err?.message || "Falha na comunicação com o servidor seguro de IA.");
     } finally {
       setIsStartingInterview(false);
     }
@@ -419,14 +442,25 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
     try {
       const res = await fetch("/api/interview/respond", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...userHeaders,
+        },
         body: JSON.stringify({
           sessionId: currentSession.sessionId,
           candidateResponse: userText,
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = {};
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Resposta inválida do servidor de avaliação (${res.status}): ${text.slice(0, 100)}`);
+      }
+
       if (data.status === "success" && data.session) {
         setCurrentSession(data.session);
         fetchPastSessions();
@@ -439,9 +473,9 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
       } else {
         alert(data.error || "Não foi possível processar a resposta da banca.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting interview response", err);
-      alert("Erro na ligação ao servidor de avaliação.");
+      alert(err?.message || "Erro na ligação ao servidor de avaliação.");
     } finally {
       setIsSubmittingResponse(false);
     }
@@ -507,7 +541,11 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
           <button
             onClick={() => {
               if (!currentSession) {
-                alert("Por favor inicie uma entrevista primeiro na aba 'Configurar CV & Vaga'.");
+                if (cvText.trim() && jobDescription.trim()) {
+                  handleStartInterview();
+                } else {
+                  alert("Por favor selecione ou preencha o CV e a Descrição da Vaga para iniciar a entrevista.");
+                }
                 return;
               }
               setActiveTab("interview");
@@ -557,19 +595,45 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
 
               <div className="space-y-2.5 pt-1">
                 {SAMPLE_CVS.map((sample, idx) => (
-                  <button
+                  <div
                     key={idx}
-                    onClick={() => handleSelectSampleCv(idx)}
-                    className="w-full p-3.5 rounded-xl bg-stone-950 border border-stone-800 hover:border-amber-500/60 hover:bg-stone-800/50 text-left transition space-y-1 group"
+                    className="p-3.5 rounded-xl bg-stone-950 border border-stone-800 hover:border-amber-500/60 transition space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-stone-200 group-hover:text-amber-400 transition">
+                      <span className="text-xs font-bold text-stone-200">
                         {sample.title}
                       </span>
-                      <ChevronRight className="w-4 h-4 text-stone-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-transform" />
                     </div>
                     <p className="text-[11px] text-stone-400 font-mono line-clamp-1">{sample.company}</p>
-                  </button>
+
+                    <div className="flex items-center gap-2 pt-1 border-t border-stone-900">
+                      <button
+                        onClick={() => handleSelectSampleCv(idx)}
+                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-[11px] text-stone-300 font-mono flex items-center gap-1 transition"
+                      >
+                        <FileText className="w-3 h-3 text-amber-400" />
+                        <span>Preencher Form</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleSelectSampleCv(idx);
+                          handleStartInterview({
+                            candidateName: sample.title.includes("Manuel") ? "Eng. Manuel Silva" : sample.title.includes("Beatriz") ? "Dra. Beatriz Santos" : "Dr. Carlos Neto",
+                            targetRole: sample.role,
+                            companyName: sample.company,
+                            cvText: sample.cv,
+                            jobDescription: sample.job,
+                          });
+                        }}
+                        disabled={isStartingInterview}
+                        className="px-2.5 py-1 rounded-lg bg-amber-600/20 hover:bg-amber-600 text-[11px] text-amber-300 hover:text-white font-bold font-mono flex items-center gap-1 transition ml-auto disabled:opacity-50"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Simular Já</span>
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -696,7 +760,7 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
               </div>
 
               <button
-                onClick={handleStartInterview}
+                onClick={() => handleStartInterview()}
                 disabled={isStartingInterview}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition disabled:opacity-50"
               >

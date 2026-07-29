@@ -61,10 +61,13 @@ import {
 
 import { Language, SUPPORTED_LANGUAGES, translations } from "../data/translations";
 
+import { UserProfile } from "../types";
+
 interface OIetroDashboardProps {
   onAskAI: (prompt: string) => void;
   currentLanguage?: Language;
   onSelectLanguage?: (lang: Language) => void;
+  currentUser?: UserProfile | null;
 }
 
 // Audience Persona options
@@ -77,9 +80,15 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
   onAskAI,
   currentLanguage = "pt",
   onSelectLanguage,
+  currentUser: propCurrentUser,
 }) => {
   const t = translations[currentLanguage] || translations.pt;
   const currentLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === currentLanguage) || SUPPORTED_LANGUAGES[0];
+
+  const userHeaders = {
+    "x-user-email": propCurrentUser?.email || "guest@lauoil.ao",
+    "x-user-id": propCurrentUser?.id || "usr-guest",
+  };
 
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "mercado" | "ia" | "angola" | "noticias" | "alertas" | "relatorios" | "simulacao" | "crm" | "supabase"
@@ -260,11 +269,13 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
   const [generatorBorder, setGeneratorBorder] = useState(true);
   const [copiedCodeType, setCopiedCodeType] = useState<"html" | "markdown" | null>(null);
 
-  // Fetch CRM contacts from server API
+  // Fetch CRM contacts from server API (Isolated per User)
   const fetchCrmContacts = async () => {
     setIsCrmLoading(true);
     try {
-      const res = await fetch("/api/crm/contacts");
+      const res = await fetch("/api/crm/contacts", {
+        headers: userHeaders,
+      });
       const data = await res.json();
       if (data.status === "success" && Array.isArray(data.contacts)) {
         setCrmContacts(data.contacts);
@@ -278,7 +289,7 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
 
   useEffect(() => {
     fetchCrmContacts();
-  }, []);
+  }, [propCurrentUser?.email]);
 
   const handleCreateContact = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -287,7 +298,10 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
     try {
       const res = await fetch("/api/crm/contacts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...userHeaders,
+        },
         body: JSON.stringify(newContactForm),
       });
       const data = await res.json();
@@ -315,7 +329,10 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
     try {
       const res = await fetch(`/api/crm/contacts/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...userHeaders,
+        },
         body: JSON.stringify({ stage: newStage }),
       });
       const data = await res.json();
@@ -332,7 +349,10 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
   const handleDeleteContact = async (id: string) => {
     if (!confirm("Tem certeza que deseja remover este contacto do CRM?")) return;
     try {
-      await fetch(`/api/crm/contacts/${id}`, { method: "DELETE" });
+      await fetch(`/api/crm/contacts/${id}`, {
+        method: "DELETE",
+        headers: userHeaders,
+      });
       setCrmContacts((prev) => prev.filter((c) => c.id !== id));
     } catch (e) {
       console.error("Error deleting contact", e);
@@ -351,11 +371,23 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
 
   // Authentication State
   const [currentUser, setCurrentUser] = useState<{
+    id?: string;
     name: string;
     email: string;
-    institution: string;
+    institution?: string;
+    company?: string;
     role: string;
   } | null>(() => {
+    if (propCurrentUser) {
+      return {
+        id: propCurrentUser.id,
+        name: propCurrentUser.name,
+        email: propCurrentUser.email,
+        institution: propCurrentUser.institution || propCurrentUser.company || "Sonangol E.P.",
+        company: propCurrentUser.company,
+        role: propCurrentUser.role,
+      };
+    }
     try {
       const saved = localStorage.getItem("lauoil_user");
       if (saved) return JSON.parse(saved);
@@ -369,6 +401,19 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
       role: "Analista de Mercado Sênior",
     };
   });
+
+  useEffect(() => {
+    if (propCurrentUser) {
+      setCurrentUser({
+        id: propCurrentUser.id,
+        name: propCurrentUser.name,
+        email: propCurrentUser.email,
+        institution: propCurrentUser.institution || propCurrentUser.company || "Sonangol E.P.",
+        company: propCurrentUser.company,
+        role: propCurrentUser.role,
+      });
+    }
+  }, [propCurrentUser]);
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");

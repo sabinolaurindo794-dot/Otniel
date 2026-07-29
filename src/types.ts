@@ -9,6 +9,15 @@ export interface ModelOption {
   description: string;
 }
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  company: string;
+  institution?: string;
+}
+
 export interface Attachment {
   id: string;
   name: string;

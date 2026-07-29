@@ -42,9 +42,16 @@ interface SupabaseStatus {
 
 interface SupabaseDocsManagerProps {
   onAskAI: (prompt: string) => void;
+  currentUser?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    company: string;
+  } | null;
 }
 
-export const SupabaseDocsManager: React.FC<SupabaseDocsManagerProps> = ({ onAskAI }) => {
+export const SupabaseDocsManager: React.FC<SupabaseDocsManagerProps> = ({ onAskAI, currentUser }) => {
   const [activeTab, setActiveTab] = useState<"docs" | "supabase" | "migration">("docs");
   const [status, setStatus] = useState<SupabaseStatus | null>(null);
   const [sqlMigration, setSqlMigration] = useState<string>("");
@@ -64,24 +71,47 @@ export const SupabaseDocsManager: React.FC<SupabaseDocsManagerProps> = ({ onAskA
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Fetch Supabase Status & Documents
+  const userHeaders = {
+    "x-user-email": currentUser?.email || "guest@lauoil.ao",
+    "x-user-id": currentUser?.id || "usr-guest",
+  };
+
+  // Fetch Supabase Status & Documents safely
   const fetchData = async () => {
     setLoadingDocs(true);
+    const safeFetchJson = async (url: string, init?: RequestInit) => {
+      try {
+        const r = await fetch(url, init);
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
+          const txt = await r.text();
+          console.warn(`Response from ${url} was not JSON (${r.status}):`, txt.slice(0, 100));
+          return { status: "error", message: `Formato de resposta inválido (${r.status})` };
+        }
+        return await r.json();
+      } catch (err: any) {
+        console.warn(`Fetch exception for ${url}:`, err);
+        return { status: "error", message: err?.message || "Erro de ligação ao servidor." };
+      }
+    };
+
     try {
       const [statusRes, docsRes, migRes] = await Promise.all([
-        fetch("/api/supabase/status").then((r) => r.json()),
-        fetch("/api/documents").then((r) => r.json()),
-        fetch("/api/supabase/migrations").then((r) => r.json()),
+        safeFetchJson("/api/supabase/status"),
+        safeFetchJson("/api/documents", { headers: userHeaders }),
+        safeFetchJson("/api/supabase/migrations", { headers: userHeaders }),
       ]);
 
-      if (statusRes.status === "success") {
+      if (statusRes && statusRes.status === "success") {
         setStatus(statusRes);
       }
-      if (docsRes.status === "success") {
+      if (docsRes && docsRes.status === "success" && Array.isArray(docsRes.documents)) {
         setDocuments(docsRes.documents);
       }
-      if (migRes.status === "success") {
+      if (migRes && migRes.status === "success" && migRes.sql) {
         setSqlMigration(migRes.sql);
+      } else if (migRes && migRes.status === "error") {
+        setSqlMigration(`-- ${migRes.message || "Acesso restrito ao proprietário para visualização de código SQL."}`);
       }
     } catch (e) {
       console.error("Failed to load Supabase / Documents data:", e);
@@ -92,7 +122,7 @@ export const SupabaseDocsManager: React.FC<SupabaseDocsManagerProps> = ({ onAskA
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentUser?.email]);
 
   const handleCopySql = () => {
     if (!sqlMigration) return;
@@ -135,7 +165,10 @@ export const SupabaseDocsManager: React.FC<SupabaseDocsManagerProps> = ({ onAskA
     try {
       const res = await fetch("/api/documents/upload-pdf", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...userHeaders,
+        },
         body: JSON.stringify({
           title: uploadTitle || selectedPdfFile.name,
           file_name: selectedPdfFile.name,
@@ -145,7 +178,15 @@ export const SupabaseDocsManager: React.FC<SupabaseDocsManagerProps> = ({ onAskA
         }),
       });
 
-      const data = await res.json();
+      const ct = res.headers.get("content-type") || "";
+      let data: any = {};
+      if (ct.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Resposta do servidor em formato inválido (${res.status}): ${text.slice(0, 100)}`);
+      }
+
       if (data.status === "success") {
         setDocuments((prev) => [data.document, ...prev]);
         setSelectedDocForView(data.document);
@@ -550,23 +591,53 @@ export const SupabaseDocsManager: React.FC<SupabaseDocsManagerProps> = ({ onAskA
                 </h3>
               </div>
               <p className="text-xs text-stone-400 mt-1">
-                Ficheiro: <strong className="font-mono text-emerald-400">/supabase/migrations/20260728000000_initial_schema.sql</strong>
+                Ficheiro: <strong className="font-mono text-emerald-400">/supabase/migrations/20260728000001_user_data_security_isolation.sql</strong>
               </p>
             </div>
 
-            <button
-              onClick={handleCopySql}
-              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-amber-600/20"
-            >
-              {copiedSql ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-              <span>{copiedSql ? "SQL Copiado para a Área de Transferência!" : "Copiar SQL da Migração"}</span>
-            </button>
+            {currentUser?.email?.toLowerCase() === "sabinolaurindo794@gmail.com" ||
+            currentUser?.email?.toLowerCase() === "admin@lauoil.ao" ||
+            currentUser?.email?.toLowerCase().includes("sabino") ||
+            currentUser?.role?.toLowerCase() === "owner" ||
+            currentUser?.role?.toLowerCase() === "admin" ? (
+              <button
+                onClick={handleCopySql}
+                className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-amber-600/20"
+              >
+                {copiedSql ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedSql ? "SQL Copiado para a Área de Transferência!" : "Copiar SQL da Migração"}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Proteção de Código Ativa</span>
+              </div>
+            )}
           </div>
 
           <div className="relative">
-            <pre className="p-5 rounded-2xl bg-stone-950 border border-stone-800 text-stone-300 font-mono text-xs overflow-x-auto max-h-[500px] leading-relaxed">
-              {sqlMigration || "-- Carregando código da migração SQL..."}
-            </pre>
+            {currentUser?.email?.toLowerCase() === "sabinolaurindo794@gmail.com" ||
+            currentUser?.email?.toLowerCase() === "admin@lauoil.ao" ||
+            currentUser?.email?.toLowerCase().includes("sabino") ||
+            currentUser?.role?.toLowerCase() === "owner" ||
+            currentUser?.role?.toLowerCase() === "admin" ? (
+              <pre className="p-5 rounded-2xl bg-stone-950 border border-stone-800 text-stone-300 font-mono text-xs overflow-x-auto max-h-[500px] leading-relaxed">
+                {sqlMigration || "-- Carregando código da migração SQL..."}
+              </pre>
+            ) : (
+              <div className="p-8 rounded-2xl bg-stone-950 border border-amber-500/30 text-center space-y-4">
+                <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center mx-auto text-amber-400">
+                  <ShieldCheck className="w-8 h-8" />
+                </div>
+                <h4 className="text-lg font-bold text-white">Código de Migração SQL Protegido</h4>
+                <p className="text-xs text-stone-400 max-w-md mx-auto leading-relaxed">
+                  A visualização, cópia e inspeção direta do código fonte SQL e da arquitetura da base de dados são restritas exclusivamente ao Proprietário do Sistema (<span className="text-amber-400 font-bold">Sabino Laurindo - sabinolaurindo794@gmail.com</span>).
+                </p>
+                <div className="inline-block px-4 py-2 bg-stone-900 rounded-xl border border-stone-800 text-xs text-stone-400 font-mono">
+                  Status: 🔒 RLS & Code Inspection Security Shield Active
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

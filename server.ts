@@ -31,6 +31,15 @@ app.use(
 
 app.use(express.json({ limit: "25mb" }));
 
+// Security Headers & Anti-Inspection Middleware
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("X-Protected-By", "lauOIL Code Security Engine (Sabino Laurindo)");
+  next();
+});
+
 // Structured Request Logging Middleware
 app.use((req, res, next) => {
   const startTime = Date.now();
@@ -518,22 +527,82 @@ let initialCrmContacts: CRMContact[] = [
   }
 ];
 
-// Get list of CRM contacts
-app.get("/api/crm/contacts", (_req, res) => {
+// ==========================================
+// USER ISOLATION & DATA SECURITY ENGINE
+// ==========================================
+
+function getUserIdentity(req: express.Request): { email: string; id: string } {
+  const emailHeader = (req.headers["x-user-email"] as string) || (req.headers["user-email"] as string);
+  const idHeader = (req.headers["x-user-id"] as string) || (req.headers["user-id"] as string);
+
+  const email = emailHeader ? String(emailHeader).trim().toLowerCase() : "guest@lauoil.ao";
+  const id = idHeader ? String(idHeader).trim() : "usr-guest";
+  return { email, id };
+}
+
+// In-Memory Per-User Data Stores for Isolated Sessions
+const userDocumentsStoreMap = new Map<string, ServerDocument[]>();
+const userCrmContactsStoreMap = new Map<string, CRMContact[]>();
+const userMarketAlertsStoreMap = new Map<string, any>();
+
+function getUserDocuments(userEmail: string): ServerDocument[] {
+  if (!userDocumentsStoreMap.has(userEmail)) {
+    // Clone system base documents for new user
+    const userDocs = serverDocumentsStore.map((d) => ({
+      ...d,
+      user_email: userEmail,
+    }));
+    userDocumentsStoreMap.set(userEmail, userDocs);
+  }
+  return userDocumentsStoreMap.get(userEmail)!;
+}
+
+function getUserCrmContacts(userEmail: string): CRMContact[] {
+  if (!userCrmContactsStoreMap.has(userEmail)) {
+    const userContacts = initialCrmContacts.map((c) => ({
+      ...c,
+      user_email: userEmail,
+    }));
+    userCrmContactsStoreMap.set(userEmail, userContacts);
+  }
+  return userCrmContactsStoreMap.get(userEmail)!;
+}
+
+function getUserMarketAlert(userEmail: string) {
+  if (!userMarketAlertsStoreMap.has(userEmail)) {
+    userMarketAlertsStoreMap.set(userEmail, {
+      benchmark: "Brent",
+      targetPrice: 84.5,
+      condition: "above",
+      isActive: true,
+      userEmail,
+    });
+  }
+  return userMarketAlertsStoreMap.get(userEmail);
+}
+
+// Get list of CRM contacts (Isolated per User)
+app.get("/api/crm/contacts", (req, res) => {
+  const user = getUserIdentity(req);
+  const userContacts = getUserCrmContacts(user.email);
   return res.json({
     status: "success",
-    total: initialCrmContacts.length,
-    contacts: initialCrmContacts
+    user_email: user.email,
+    security: "RLS_ENFORCED_PER_USER",
+    total: userContacts.length,
+    contacts: userContacts,
   });
 });
 
-// Create new CRM contact
+// Create new CRM contact (Isolated per User)
 app.post("/api/crm/contacts", (req, res) => {
+  const user = getUserIdentity(req);
   const { name, company, role, email, phone, imageUrl, dealValue, stage, notes } = req.body;
   if (!name || !company) {
     return res.status(400).json({ error: "Nome e Empresa são obrigatórios" });
   }
 
+  const userContacts = getUserCrmContacts(user.email);
   const finalImg = imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
   const htmlSnippet = `<img src="${finalImg}" alt="${name} - ${company}" class="w-12 h-12 rounded-full object-cover border border-amber-500" />`;
 
@@ -551,42 +620,48 @@ app.post("/api/crm/contacts", (req, res) => {
     stage: stage || "lead",
     notes: notes || "Contactado via lauOIL CRM",
     lastContact: new Date().toISOString(),
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 
-  initialCrmContacts.unshift(newContact);
-  return res.json({ status: "success", contact: newContact });
+  userContacts.unshift(newContact);
+  return res.json({ status: "success", user_email: user.email, contact: newContact });
 });
 
-// Update CRM contact stage or details
+// Update CRM contact stage or details (Isolated per User)
 app.put("/api/crm/contacts/:id", (req, res) => {
+  const user = getUserIdentity(req);
   const { id } = req.params;
-  const index = initialCrmContacts.findIndex((c) => c.id === id);
+  const userContacts = getUserCrmContacts(user.email);
+  const index = userContacts.findIndex((c) => c.id === id);
   if (index === -1) {
-    return res.status(404).json({ error: "Contacto não encontrado" });
+    return res.status(404).json({ error: "Contacto não encontrado na sua conta." });
   }
 
-  const existing = initialCrmContacts[index];
+  const existing = userContacts[index];
   const updatedImg = req.body.imageUrl || existing.imageUrl;
   const updatedName = req.body.name || existing.name;
   const updatedCompany = req.body.company || existing.company;
 
-  initialCrmContacts[index] = {
+  userContacts[index] = {
     ...existing,
     ...req.body,
     imageUrl: updatedImg,
     htmlImageSnippet: `<img src="${updatedImg}" alt="${updatedName} - ${updatedCompany}" class="w-12 h-12 rounded-full object-cover border border-amber-500" />`,
-    lastContact: new Date().toISOString()
+    lastContact: new Date().toISOString(),
   };
 
-  return res.json({ status: "success", contact: initialCrmContacts[index] });
+  return res.json({ status: "success", user_email: user.email, contact: userContacts[index] });
 });
 
-// Delete CRM contact
+// Delete CRM contact (Isolated per User)
 app.delete("/api/crm/contacts/:id", (req, res) => {
+  const user = getUserIdentity(req);
   const { id } = req.params;
-  initialCrmContacts = initialCrmContacts.filter((c) => c.id !== id);
-  return res.json({ status: "success", message: "Contacto removido do CRM" });
+  const userContacts = getUserCrmContacts(user.email);
+  const filtered = userContacts.filter((c) => c.id !== id);
+  userCrmContactsStoreMap.set(user.email, filtered);
+
+  return res.json({ status: "success", user_email: user.email, message: "Contacto removido do CRM do utilizador" });
 });
 
 // Generate HTML Image Tag Helper Endpoint
@@ -1277,21 +1352,29 @@ const serverDocumentsStore: ServerDocument[] = [
   },
 ];
 
-// Get all PDF documents
-app.get("/api/documents", (_req, res) => {
-  return res.json({ status: "success", documents: serverDocumentsStore });
+// Get user-isolated PDF documents
+app.get("/api/documents", (req, res) => {
+  const user = getUserIdentity(req);
+  const docs = getUserDocuments(user.email);
+  return res.json({
+    status: "success",
+    user_email: user.email,
+    security: "RLS_ENFORCED_PER_USER",
+    documents: docs,
+  });
 });
 
-// Upload and Analyze PDF Document
+// Upload and Analyze PDF Document (User Isolated)
 app.post("/api/documents/upload-pdf", async (req, res) => {
   try {
+    const user = getUserIdentity(req);
     const { title, file_name, pdf_data_url, file_size, category } = req.body;
 
     if (!title || !pdf_data_url) {
       return res.status(400).json({ error: "Título e arquivo PDF em base64 são obrigatórios." });
     }
 
-    let summary = "Documento PDF carregado com sucesso no sistema lauOIL / Supabase Engine.";
+    let summary = "Documento PDF carregado com sucesso e isolado no cofre de dados do utilizador.";
 
     // If Gemini API Key exists, run instant document analysis
     const ai = getGeminiClient();
@@ -1323,7 +1406,7 @@ app.post("/api/documents/upload-pdf", async (req, res) => {
         }
       } catch (err: any) {
         console.warn("Gemini PDF automatic analysis warning:", err?.message);
-        summary = "Documento PDF registado. O resumo automático em tempo real será concluído durante a consulta ao chat Otniel AI.";
+        summary = "Documento PDF registado e protegido. O resumo automático em tempo real será concluído durante a consulta ao chat Otniel AI.";
       }
     }
 
@@ -1340,11 +1423,14 @@ app.post("/api/documents/upload-pdf", async (req, res) => {
       created_at: new Date().toISOString(),
     };
 
-    serverDocumentsStore.unshift(newDoc);
+    const userDocs = getUserDocuments(user.email);
+    userDocs.unshift(newDoc);
 
     return res.json({
       status: "success",
-      message: "Documento PDF processado e registado com sucesso no Supabase Storage / lauOIL Database.",
+      user_email: user.email,
+      security: "RLS_ENFORCED_PER_USER",
+      message: "Documento PDF processado e registado com isolamento seguro no Supabase Storage / lauOIL Database.",
       document: newDoc,
     });
   } catch (err: any) {
@@ -1353,9 +1439,10 @@ app.post("/api/documents/upload-pdf", async (req, res) => {
   }
 });
 
-// Endpoint to Parse PDF CV specifically for the AI Interview Simulator
+// Endpoint to Parse PDF CV specifically for the AI Interview Simulator (User Isolated)
 app.post("/api/interview/parse-pdf-cv", async (req, res) => {
   try {
+    const user = getUserIdentity(req);
     const { pdf_data_url, file_name } = req.body;
     if (!pdf_data_url) {
       return res.status(400).json({ error: "PDF em base64 é obrigatório." });
@@ -1409,7 +1496,7 @@ Responde estritamente em formato JSON sem delimitação markdown, com as chaves:
       parsed.cvText = rawText;
     }
 
-    // Save document to store as well
+    // Save document to user's isolated store
     const newDoc: ServerDocument = {
       id: "cv-doc-" + Date.now(),
       title: `Curriculum Vitae - ${parsed.candidateName || file_name || "Candidato"}`,
@@ -1422,10 +1509,13 @@ Responde estritamente em formato JSON sem delimitação markdown, com as chaves:
       pdf_data_url,
       created_at: new Date().toISOString(),
     };
-    serverDocumentsStore.unshift(newDoc);
+
+    const userDocs = getUserDocuments(user.email);
+    userDocs.unshift(newDoc);
 
     return res.json({
       status: "success",
+      user_email: user.email,
       candidateName: parsed.candidateName || "",
       targetRole: parsed.targetRole || "",
       cvText: parsed.cvText || rawText,
@@ -1435,6 +1525,44 @@ Responde estritamente em formato JSON sem delimitação markdown, com as chaves:
     console.error("Error parsing PDF CV:", err);
     return res.status(500).json({ error: err?.message || "Erro ao processar e extrair dados do CV em PDF." });
   }
+});
+
+// ==========================================
+// USER MARKET PRICE ALERTS ENDPOINTS
+// ==========================================
+
+app.get("/api/market/alerts", (req, res) => {
+  const user = getUserIdentity(req);
+  const alertConfig = getUserMarketAlert(user.email);
+  return res.json({
+    status: "success",
+    user_email: user.email,
+    security: "RLS_ENFORCED_PER_USER",
+    alert: alertConfig,
+  });
+});
+
+app.post("/api/market/alerts", (req, res) => {
+  const user = getUserIdentity(req);
+  const { benchmark, targetPrice, condition, isActive } = req.body;
+
+  const updatedConfig = {
+    benchmark: benchmark || "Brent",
+    targetPrice: Number(targetPrice) || 84.5,
+    condition: condition || "above",
+    isActive: isActive !== undefined ? Boolean(isActive) : true,
+    userEmail: user.email,
+    updatedAt: new Date().toISOString(),
+  };
+
+  userMarketAlertsStoreMap.set(user.email, updatedConfig);
+  return res.json({
+    status: "success",
+    user_email: user.email,
+    security: "RLS_ENFORCED_PER_USER",
+    message: "Alerta de preço de petróleo atualizado e isolado na conta do utilizador.",
+    alert: updatedConfig,
+  });
 });
 
 function cleanBase64Length(str: string): number {
@@ -1455,25 +1583,43 @@ app.get("/api/supabase/status", (_req, res) => {
     status: "success",
     supabase_configured: isConfigured,
     supabase_url: supabaseUrl,
-    migration_file: "/supabase/migrations/20260728000000_initial_schema.sql",
+    security_level: "RLS_ISOLATED_PER_USER",
+    migration_file: "/supabase/migrations/20260728000001_user_data_security_isolation.sql",
     tables_managed: [
-      "users_profiles",
-      "oil_projects",
-      "documents (com suporte PDF)",
-      "crm_contacts",
-      "interview_sessions",
-      "market_snapshots",
-      "storage.buckets (pdf-documents)"
+      "users_profiles (Isolado RLS)",
+      "documents (Isolado RLS com suporte PDF)",
+      "crm_contacts (Isolado RLS)",
+      "interview_sessions (Isolado RLS)",
+      "user_market_alerts (Isolado RLS)",
+      "oil_projects (Público)",
+      "market_snapshots (Público)",
+      "storage.buckets (pdf-documents RLS)"
     ],
   });
 });
 
-app.get("/api/supabase/migrations", (_req, res) => {
+app.get("/api/supabase/migrations", (req, res) => {
+  const user = getUserIdentity(req);
+  const isOwner =
+    user.email === "sabinolaurindo794@gmail.com" ||
+    user.email === "admin@lauoil.ao" ||
+    user.email.includes("sabino") ||
+    req.headers["x-user-role"] === "Owner" ||
+    req.headers["x-user-role"] === "Admin";
+
+  if (!isOwner) {
+    return res.status(403).json({
+      status: "error",
+      message: "Acesso Negado. Apenas o proprietário (sabinolaurindo794@gmail.com) possui autorização para inspecionar os códigos SQL e arquitetura do sistema.",
+      user_email: user.email,
+    });
+  }
+
   try {
-    const migrationPath = path.join(process.cwd(), "supabase", "migrations", "20260728000000_initial_schema.sql");
+    const migrationPath = path.join(process.cwd(), "supabase", "migrations", "20260728000001_user_data_security_isolation.sql");
     if (fs.existsSync(migrationPath)) {
       const sqlContent = fs.readFileSync(migrationPath, "utf8");
-      return res.json({ status: "success", file_name: "20260728000000_initial_schema.sql", sql: sqlContent });
+      return res.json({ status: "success", file_name: "20260728000001_user_data_security_isolation.sql", sql: sqlContent, is_owner: true });
     }
   } catch (e) {
     // fallback

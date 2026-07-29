@@ -53,6 +53,13 @@ import { Language, translations } from "../data/translations";
 interface AIInterviewSimulatorProps {
   currentLanguage?: Language;
   onAskAI?: (prompt: string) => void;
+  currentUser?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    company: string;
+  } | null;
 }
 
 interface FeedbackDetail {
@@ -147,8 +154,14 @@ EXIGÊNCIAS:
 export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
   currentLanguage = "pt",
   onAskAI,
+  currentUser,
 }) => {
   const t = translations[currentLanguage] || translations.pt;
+
+  const userHeaders = {
+    "x-user-email": currentUser?.email || "guest@lauoil.ao",
+    "x-user-id": currentUser?.id || "usr-guest",
+  };
 
   const [activeTab, setActiveTab] = useState<"setup" | "interview" | "history">("setup");
 
@@ -175,10 +188,12 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load past sessions from API
+  // Load past sessions from API (Isolated per User)
   const fetchPastSessions = async () => {
     try {
-      const res = await fetch("/api/interview/sessions");
+      const res = await fetch("/api/interview/sessions", {
+        headers: userHeaders,
+      });
       const data = await res.json();
       if (data.status === "success" && Array.isArray(data.sessions)) {
         setPastSessions(data.sessions);
@@ -190,7 +205,7 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
 
   useEffect(() => {
     fetchPastSessions();
-  }, []);
+  }, [currentUser?.email]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -302,7 +317,10 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
         try {
           const res = await fetch("/api/interview/parse-pdf-cv", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...userHeaders,
+            },
             body: JSON.stringify({
               pdf_data_url: reader.result as string,
               file_name: file.name,

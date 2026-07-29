@@ -11,6 +11,7 @@ import { AuthModal, UserProfile } from "./components/AuthModal";
 import { Artifact, Attachment, Conversation, Message, ModelId, Project } from "./types";
 import { STARTER_PROMPTS } from "./data/promptPresets";
 import { parseArtifactsFromMarkdown } from "./utils/artifactParser";
+import { SecurityShield } from "./components/SecurityShield";
 import { OIetroDashboard } from "./components/OIetroDashboard";
 import { AIInterviewSimulator } from "./components/AIInterviewSimulator";
 import {
@@ -478,7 +479,8 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-stone-100 dark:bg-stone-950 font-sans text-stone-900 dark:text-stone-100 antialiased">
+    <SecurityShield currentUser={currentUser}>
+      <div className="flex h-screen w-screen overflow-hidden bg-stone-100 dark:bg-stone-950 font-sans text-stone-900 dark:text-stone-100 antialiased">
       {/* Sidebar Navigation */}
       <Sidebar
         conversations={conversations}
@@ -614,6 +616,7 @@ export default function App() {
               }}
               currentLanguage={currentLanguage}
               onSelectLanguage={(lang) => setCurrentLanguage(lang)}
+              currentUser={currentUser}
             />
           </div>
         ) : mainView === "interview" ? (
@@ -624,6 +627,7 @@ export default function App() {
                 setMainView("chat");
                 handleSendMessage(prompt);
               }}
+              currentUser={currentUser}
             />
           </div>
         ) : (
@@ -740,6 +744,7 @@ export default function App() {
         onLogout={() => setCurrentUser(null)}
       />
     </div>
+    </SecurityShield>
   );
 }
 

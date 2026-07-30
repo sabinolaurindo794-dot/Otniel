@@ -75,16 +75,16 @@ function getGeminiClient() {
 const CLAUDE_STYLE_SYSTEM_PROMPT = `
 Você é o assistente de inteligência energética e tecnológica Otniel AI (plataforma lauOIL), especialista de alto nível em Engenharia de Petróleo, Economia de Energia, Análise Preditiva de Mercado (Brent/Cabinda/WTI), Legislação Petrolífera Angolana (ANPG, Sonangol, MIREMPET), Relações Internacionais da OPEP+ e Engenharia de Software.
 
-INSTRUÇÕES CRÍTICAS E MANDATÓRIAS SOBRE DETALHAMENTO E EXPLICITAÇÃO NAS RESPOSTAS:
-1. RESPOSTAS EXPLICITAS, CERTAS E CONTEXTUALIZADAS: É estritamente proibido fornecer respostas genéricas, superficiais ou vagas. Cada resposta DEVE abordar diretamente o contexto exato da pergunta feita pelo utilizador, fornecendo factos, números, teorias, metodologias, processos operacionais e códigos exatos.
-2. ESTRUTURA OBRIGATÓRIA DA EXPLICAÇÃO DE QUALQUER CONCEITO OU PROCESSO:
-   - **Visão Geral e Definição Explicita**: Definição rigorosa e sem ambiguidades do assunto ou problema.
-   - **Passo a Passo Meticuloso**: Explicação detalhada de cada fase operacional, técnica ou lógica (o "como", o "porquê" e os intervenientes).
-   - **Fórmulas, Métricas, Códigos ou Tabelas**: Apresentar equações, códigos tipados, tabelas comparativas e rácios de desempenho exatos aplicáveis ao contexto.
-   - **Exemplo Prático & Aplicação Real**: Ilustrar com casos de estudo reais (ex: Blocos 15, 17, 32, ANPG, Sonangol, FPSOs, bibliotecas de software, etc.).
-   - **Riscos & Recomendações Técnicas Concretas**: Pontos de atenção, mitigação de riscos e plano de ação estruturado.
+INSTRUÇÕES OBRIGATÓRIAS SOBRE ARGUMENTAÇÃO EXPLICITA E RESPOSTAS ADAPTADAS À PERGUNTA:
+1. RESPOSTAS ADAPTADAS COM ARGUMENTOS SÓLIDOS: Toda e qualquer resposta DEVE conter argumentos lógicos, fundamentação técnica rigorosa, causa e efeito, dados quantitativos ou evidências específicas diretamente relacionadas com a pergunta do utilizador.
+2. PROIBIÇÃO DE VAGUIDADE OU PREENCHIMENTO GENÉRICO: É estritamente proibido fornecer introduções vazias ou parágrafos genéricos. Vá diretamente ao ponto central do que foi perguntado, fornecendo o "porquê", o "como" e justificações fundamentadas.
+3. ESTRUTURAÇÃO ARGUMENTATIVA OBRIGATÓRIA:
+   - **Tese / Resposta Direta**: Apresentação clara da solução ou explicação solicitada.
+   - **Argumentação & Fundamentação Técnica**: Factos, variáveis operacionais, equações, raciocínio lógico e dados do mercado ou código que comprovam a tese.
+   - **Demonstração Prática / Código / Dados**: Tabelas comparativas, excertos de código tipados ou métricas de impacto.
+   - **Implicações & Recomendações Concretas**: Conclusões acionáveis e plano de aplicação prática.
 
-3. USO DE ARTEFACTOS E FORMATAÇÃO:
+4. USO DE ARTEFACTOS E FORMATAÇÃO:
    - Use Markdown estruturado com títulos claros (###), tabelas comparativas e listas organizadas.
    - Quando gerar códigos substanciais, dashboards interativos, esquemas SVG ou relatórios estruturados, envolva-os num bloco de Artefacto (\`\`\`html, \`\`\`tsx, \`\`\`markdown, etc.) para visualização no painel lateral.
 `.trim();
@@ -108,7 +108,7 @@ const usersStore: Map<string, any> = new Map([
     "sabino@lauoil.ao",
     {
       id: "usr-admin-1",
-      name: "Eng. Sabino Laurindo",
+      name: "Sabino Laurindo",
       email: "sabino@lauoil.ao",
       password: "lauoil123Password!",
       role: "Administrador & Analista de Reservatórios",
@@ -130,7 +130,7 @@ const usersStore: Map<string, any> = new Map([
     "manuel.silva@sonangol.co.ao",
     {
       id: "usr-guest-3",
-      name: "Eng. Manuel Silva",
+      name: "Manuel Silva",
       email: "manuel.silva@sonangol.co.ao",
       password: "lauoil123Password!",
       role: "Especialista E&P Convidado",
@@ -216,7 +216,7 @@ app.get("/api/auth/me", (req, res) => {
     status: "success",
     user: {
       id: "usr-current",
-      name: "Eng. Sabino Laurindo",
+      name: "Sabino Laurindo",
       email: "sabino@lauoil.ao",
       role: "Administrador & Analista de Reservatórios",
       company: "lauOIL Energy & Sonangol",
@@ -463,13 +463,13 @@ interface CRMContact {
 let initialCrmContacts: CRMContact[] = [
   {
     id: "crm-1",
-    name: "Eng. Manuel Silva",
+    name: "Manuel Silva",
     company: "Sonangol E.P.",
     role: "Director de Operações Onshore",
     email: "m.silva@sonangol.co.ao",
     phone: "+244 923 456 789",
     imageUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&auto=format&fit=crop&q=80",
-    htmlImageSnippet: '<img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&auto=format&fit=crop&q=80" alt="Eng. Manuel Silva - Sonangol" class="w-12 h-12 rounded-full object-cover border border-amber-500" />',
+    htmlImageSnippet: '<img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&auto=format&fit=crop&q=80" alt="Manuel Silva - Sonangol" class="w-12 h-12 rounded-full object-cover border border-amber-500" />',
     dealValue: 12500000,
     currency: "USD",
     stage: "negociacao",
@@ -511,13 +511,13 @@ let initialCrmContacts: CRMContact[] = [
   },
   {
     id: "crm-4",
-    name: "Eng. Pedro Lumbo",
+    name: "Pedro Lumbo",
     company: "Azule Energy (BP/ENI JV)",
     role: "Gerente de Manutenção Offshore",
     email: "p.lumbo@azuleenergy.com",
     phone: "+244 945 333 444",
     imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
-    htmlImageSnippet: '<img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80" alt="Eng. Pedro Lumbo - Azule Energy" class="w-12 h-12 rounded-full object-cover border border-amber-500" />',
+    htmlImageSnippet: '<img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80" alt="Pedro Lumbo - Azule Energy" class="w-12 h-12 rounded-full object-cover border border-amber-500" />',
     dealValue: 18000000,
     currency: "USD",
     stage: "contacto",
@@ -838,7 +838,7 @@ const interviewSessionsStore: Map<string, InterviewSession> = new Map();
 const initialSampleSessionId = "session-demo-1";
 interviewSessionsStore.set(initialSampleSessionId, {
   sessionId: initialSampleSessionId,
-  candidateName: "Eng. Manuel Silva",
+  candidateName: "Manuel Silva",
   targetRole: "Engenheiro de Reservatórios Sénior",
   companyName: "Sonangol P&P / Consórcio Offshore",
   cvText: "12 anos em Engenharia de Reservatórios e Simulação Numérica no Offshore de Angola (Blocos 15, 17 e 32).",
@@ -856,7 +856,7 @@ interviewSessionsStore.set(initialSampleSessionId, {
       id: "turn-1",
       interviewerName: "Dr. Fernando Costa",
       interviewerRole: "Director de Operações E&P",
-      question: "Engenheiro Manuel, no seu CV afirma ter liderado a simulação de reservatórios no Bloco 32. Como geriu a incerteza de permeabilidade nos modelos dinâmicos durante a injecção de água?",
+      question: "Manuel, no seu CV afirma ter liderado a simulação de reservatórios no Bloco 32. Como geriu a incerteza de permeabilidade nos modelos dinâmicos durante a injecção de água?",
       candidateAnswer: "Utilizamos simulação estocástica no Petrel acoplada ao ECLIPSE 100, variando os regimes de permeabilidade k_x/k_z com histórico de pressão dos poços produtores para calibrar a curva de sintonia.",
       feedback: {
         score: 92,
@@ -1237,7 +1237,7 @@ function generateFallbackInterviewEvaluation(candidateResponse: string, session:
   const nextInterviewerName = session.turns.length % 2 === 0 ? "Dr. Fernando Costa" : "Dra. Beatriz Santos";
   const nextInterviewerRole = session.turns.length % 2 === 0 ? "Director de Operações Técnicas" : "Directora de Talentos & Recursos Humanos";
 
-  const nextQuestion = `Engenheiro(a) ${session.candidateName}, aprofundando a sua explicação sobre "${candidateResponse.slice(0, 45)}...": Qual foi a métrica exata de impacto que obteve nessa intervenção, quais os principais obstáculos regulatórios ou técnicos enfrentados e de que modo assegurou a conformidade com as exigências da ${session.companyName}?`;
+  const nextQuestion = `${session.candidateName}, aprofundando a sua explicação sobre "${candidateResponse.slice(0, 45)}...": Qual foi a métrica exata de impacto que obteve nessa intervenção, quais os principais obstáculos regulatórios ou técnicos enfrentados e de que modo assegurou a conformidade com as exigências da ${session.companyName}?`;
 
   return {
     score,

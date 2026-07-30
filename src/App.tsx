@@ -123,21 +123,22 @@ export default function App() {
   });
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isAppLocked, setIsAppLocked] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     try {
       const saved = localStorage.getItem("otniel_user");
       if (saved) return JSON.parse(saved);
     } catch (e) {}
-    return {
-      id: "usr-admin-default",
-      name: "Eng. Sabino Laurindo",
-      email: "sabino@lauoil.ao",
-      role: "Administrador & Analista de Reservatórios",
-      company: "lauOIL Energy & Sonangol",
-    };
+    return null;
   });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("otniel_user");
+      return !saved;
+    } catch (e) {
+      return true;
+    }
+  });
+  const [isAppLocked, setIsAppLocked] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 

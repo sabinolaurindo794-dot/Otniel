@@ -131,26 +131,6 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             />
           </div>
 
-          {/* Color Tag */}
-          <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Theme Color
-            </label>
-            <div className="flex items-center gap-2">
-              {COLOR_OPTIONS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className={`w-6 h-6 rounded-full transition-transform ${
-                    color === c ? "scale-125 ring-2 ring-offset-2 ring-amber-600" : ""
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-          </div>
-
           {/* Custom System Instructions */}
           <div>
             <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1 flex items-center justify-between">

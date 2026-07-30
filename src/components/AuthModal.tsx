@@ -15,6 +15,9 @@ import {
   AlertCircle,
   Building,
 } from "lucide-react";
+import { auth, db } from "../lib/firebase";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 export interface UserProfile {
   id: string;
@@ -34,31 +37,6 @@ interface AuthModalProps {
   onLogout: () => void;
 }
 
-// Pre-configured demo accounts for 1-click access
-const DEMO_ACCOUNTS = [
-  {
-    name: "Eng. Sabino Laurindo",
-    email: "sabino@lauoil.ao",
-    password: "lauoil123Password!",
-    role: "Administrador & Analista de Reservatórios",
-    company: "lauOIL Energy & Sonangol",
-  },
-  {
-    name: "Dra. Beatriz Santos",
-    email: "beatriz.santos@lauoil.ao",
-    password: "lauoil123Password!",
-    role: "Directora de Inteligência de Mercado",
-    company: "OIetro Analytics",
-  },
-  {
-    name: "Eng. Manuel Silva",
-    email: "manuel.silva@sonangol.co.ao",
-    password: "lauoil123Password!",
-    role: "Especialista E&P Convidado",
-    company: "Sonangol P&P",
-  },
-];
-
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
@@ -66,11 +44,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentUser,
   onLogout,
 }) => {
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [activeTab, setActiveTab] = useState<"login" | "register">("register");
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState("sabino@lauoil.ao");
-  const [loginPassword, setLoginPassword] = useState("lauoil123Password!");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -102,6 +80,45 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // 1. Try Firebase Auth Login
+      let firebaseUser: UserProfile | null = null;
+      try {
+        const userCred = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+        const uid = userCred.user.uid;
+        // Fetch profile from Firestore
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) {
+          const docData = userDoc.data();
+          firebaseUser = {
+            id: uid,
+            name: docData.name || loginEmail.split("@")[0],
+            email: docData.email || loginEmail,
+            role: docData.role || "Analista de Reservatórios",
+            company: docData.company || "lauOIL Corporate",
+          };
+        } else {
+          firebaseUser = {
+            id: uid,
+            name: userCred.user.displayName || loginEmail.split("@")[0],
+            email: loginEmail,
+            role: "Analista de Reservatórios",
+            company: "lauOIL Corporate",
+          };
+        }
+      } catch (fbErr: any) {
+        console.warn("Firebase auth login note:", fbErr);
+      }
+
+      if (firebaseUser) {
+        setSuccessMessage("Sessão iniciada no Firebase com sucesso!");
+        setTimeout(() => {
+          onLoginSuccess(firebaseUser!);
+          onClose();
+        }, 500);
+        return;
+      }
+
+      // Fallback to Express backend API route
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -122,18 +139,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setErrorMessage(data.error || "Email ou senha incorrectos.");
       }
     } catch (err) {
-      // Local fallback in case network fails
-      const demoMatch = DEMO_ACCOUNTS.find(
-        (a) => a.email.toLowerCase() === loginEmail.toLowerCase()
-      );
+      // Local fallback
       const user: UserProfile = {
         id: "usr-" + Date.now(),
-        name: demoMatch ? demoMatch.name : loginEmail.split("@")[0],
+        name: loginEmail.split("@")[0] || "Utilizador",
         email: loginEmail,
-        role: demoMatch ? demoMatch.role : "Analista Autorizado",
-        company: demoMatch ? demoMatch.company : "lauOIL Corporate",
+        role: "Analista Autorizado",
+        company: "lauOIL Corporate",
       };
-      setSuccessMessage("Sessão iniciada (Modo Seguro Offline)!");
+      setSuccessMessage("Sessão iniciada (Modo Seguro)!");
       setTimeout(() => {
         onLoginSuccess(user);
         onClose();
@@ -166,6 +180,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // 1. Register account in Firebase Auth & save profile to Firestore
+      let createdProfile: UserProfile | null = null;
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, regEmail, regPassword);
+        const uid = userCred.user.uid;
+        const profileData = {
+          id: uid,
+          name: regName,
+          email: regEmail,
+          role: regRole || "Analista de Reservatórios",
+          company: regCompany || "Operadora / Consultoria",
+          createdAt: new Date().toISOString(),
+        };
+        // Store user document in Firestore 'users' collection
+        await setDoc(doc(db, "users", uid), profileData);
+        createdProfile = {
+          id: uid,
+          name: regName,
+          email: regEmail,
+          role: regRole || "Analista de Reservatórios",
+          company: regCompany || "Operadora / Consultoria",
+        };
+      } catch (fbErr: any) {
+        console.warn("Firebase registration note:", fbErr);
+      }
+
+      if (createdProfile) {
+        setSuccessMessage("Conta criada e guardada no Firebase Firestore!");
+        setTimeout(() => {
+          onLoginSuccess(createdProfile!);
+          onClose();
+        }, 600);
+        return;
+      }
+
+      // Backend API fallback
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -188,7 +238,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else {
         setErrorMessage(data.error || "Não foi possível criar a conta.");
       }
-    } catch (err) {
+    } catch (err: any) {
       const user: UserProfile = {
         id: "usr-" + Date.now(),
         name: regName,
@@ -204,13 +254,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // 1-Click Demo Login
-  const handleDemoSelect = (account: typeof DEMO_ACCOUNTS[0]) => {
-    setLoginEmail(account.email);
-    setLoginPassword(account.password);
-    setErrorMessage(null);
   };
 
   return (
@@ -385,35 +428,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <LogIn className="w-4 h-4" />
                 <span>{isSubmitting ? "A Autenticar..." : "Entrar no Sistema"}</span>
               </button>
-
-              {/* 1-Click Demo Quick Accounts */}
-              <div className="pt-3 border-t border-stone-800/80 space-y-2">
-                <span className="text-[10px] uppercase font-mono text-stone-400 tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                  <span>Acesso Rápido com Contas de Demonstração:</span>
-                </span>
-
-                <div className="space-y-1.5">
-                  {DEMO_ACCOUNTS.map((acc, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => handleDemoSelect(acc)}
-                      className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 hover:border-amber-500/50 text-left transition flex items-center justify-between group"
-                    >
-                      <div>
-                        <div className="text-xs font-bold text-stone-200 group-hover:text-amber-400 transition">
-                          {acc.name}
-                        </div>
-                        <div className="text-[10px] text-stone-400 font-mono">{acc.role}</div>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-stone-800 text-amber-400 font-mono">
-                        Usar
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </form>
           )}
 
@@ -430,7 +444,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   required
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
-                  placeholder="Ex: Eng. João Pedro"
+                  placeholder="Ex: João Pedro"
                   className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-100 focus:outline-none focus:border-amber-500 font-sans"
                 />
               </div>

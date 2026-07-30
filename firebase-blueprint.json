@@ -1,0 +1,31 @@
+{
+  "entities": {
+    "users": {
+      "title": "Users",
+      "description": "User profiles and credentials for lauOIL platform users",
+      "properties": {
+        "id": { "type": "string", "description": "Unique user ID" },
+        "name": { "type": "string", "description": "Full user name" },
+        "email": { "type": "string", "description": "User email address" },
+        "role": { "type": "string", "description": "Job title or role" },
+        "company": { "type": "string", "description": "Company or organization" },
+        "createdAt": { "type": "string", "description": "ISO timestamp when account was created" }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "projects": {
+      "title": "Projects",
+      "description": "Oil & gas analytics projects",
+      "properties": {
+        "id": { "type": "string", "description": "Project ID" },
+        "userId": { "type": "string", "description": "Owner user ID" },
+        "name": { "type": "string", "description": "Project title" },
+        "basin": { "type": "string", "description": "Basin name (e.g., Kwanza, Lower Congo)" },
+        "operator": { "type": "string", "description": "Operating company" },
+        "block": { "type": "string", "description": "Offshore/Onshore Block" },
+        "createdAt": { "type": "string", "description": "ISO creation date" }
+      },
+      "required": ["id", "name"]
+    }
+  }
+}

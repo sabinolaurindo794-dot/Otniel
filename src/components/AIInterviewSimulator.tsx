@@ -100,10 +100,10 @@ interface InterviewSessionData {
 
 const SAMPLE_CVS = [
   {
-    title: "Engenheiro de Reservatórios Sénior (Petróleo & Gás)",
-    role: "Engenheiro de Reservatórios Sénior",
+    title: "Especialista em Reservatórios Sénior (Petróleo & Gás)",
+    role: "Especialista em Reservatórios Sénior",
     company: "Sonangol / Operadoras Offshore",
-    cv: `NOME: Eng. Manuel Silva
+    cv: `NOME: Manuel Silva
 EXPERIÊNCIA: 12 anos em Engenharia de Reservatórios e Simulação Numérica no Offshore de Angola (Blocos 15, 17 e 32).
 COMPETÊNCIAS: Eclipse, Petrel, Análise de Declínio de Produção, Recuperação Avançada EOR (Injecção de Água e Gás), Cálculo de Reservas STOOIP.
 HISTÓRICO PROFISSIONAL:
@@ -166,7 +166,7 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
   const [activeTab, setActiveTab] = useState<"setup" | "interview" | "history">("setup");
 
   // Setup Form State
-  const [candidateName, setCandidateName] = useState("Eng. Manuel Silva");
+  const [candidateName, setCandidateName] = useState("Manuel Silva");
   const [targetRole, setTargetRole] = useState("Engenheiro de Reservatórios Sénior");
   const [companyName, setCompanyName] = useState("Sonangol E.P. / Consórcio Offshore");
   const [cvText, setCvText] = useState(SAMPLE_CVS[0].cv);
@@ -367,7 +367,7 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
   }) => {
     const finalCv = (overrideParams?.cvText || cvText || "").trim() || SAMPLE_CVS[0].cv;
     const finalJob = (overrideParams?.jobDescription || jobDescription || "").trim() || SAMPLE_CVS[0].job;
-    const finalName = (overrideParams?.candidateName || candidateName || "").trim() || "Eng. Manuel Silva";
+    const finalName = (overrideParams?.candidateName || candidateName || "").trim() || "Manuel Silva";
     const finalRole = (overrideParams?.targetRole || targetRole || "").trim() || "Engenheiro de Reservatórios Sénior";
     const finalCompany = (overrideParams?.companyName || companyName || "").trim() || "Sonangol E.P. / Consórcio Offshore";
 
@@ -621,7 +621,7 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
                         onClick={() => {
                           handleSelectSampleCv(idx);
                           handleStartInterview({
-                            candidateName: sample.title.includes("Manuel") ? "Eng. Manuel Silva" : sample.title.includes("Beatriz") ? "Dra. Beatriz Santos" : "Dr. Carlos Neto",
+                            candidateName: sample.title.includes("Manuel") ? "Manuel Silva" : sample.title.includes("Beatriz") ? "Beatriz Santos" : "Carlos Neto",
                             targetRole: sample.role,
                             companyName: sample.company,
                             cvText: sample.cv,
@@ -699,7 +699,7 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
                   type="text"
                   value={candidateName}
                   onChange={(e) => setCandidateName(e.target.value)}
-                  placeholder="Ex: Eng. Manuel Silva"
+                  placeholder="Ex: Manuel Silva"
                   className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-100 focus:outline-none focus:border-amber-500 font-sans"
                 />
               </div>

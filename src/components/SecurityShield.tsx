@@ -98,7 +98,7 @@ export const SecurityShield: React.FC<SecurityShieldProps> = ({
     if (unlockPassword === "lauoil123Password!" || unlockPassword === "123456" || unlockPassword.length >= 4) {
       const defaultUser: UserProfile = {
         id: "usr-admin-default",
-        name: "Eng. Sabino Laurindo",
+        name: "Sabino Laurindo",
         email: "sabino@lauoil.ao",
         role: "Administrador & Analista de Reservatórios",
         company: "lauOIL Energy & Sonangol",
@@ -173,63 +173,16 @@ export const SecurityShield: React.FC<SecurityShieldProps> = ({
               </button>
             </form>
 
-            {/* Quick Demo Credentials */}
-            <div className="space-y-2 pt-2 border-t border-stone-800/80">
-              <span className="text-[11px] font-mono text-stone-400 block font-bold uppercase tracking-wider text-center">
-                Ou Inicie Sessão com 1-Clique:
-              </span>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() =>
-                    handleSelectQuickAccount({
-                      id: "usr-admin-default",
-                      name: "Eng. Sabino Laurindo",
-                      email: "sabino@lauoil.ao",
-                      role: "Administrador & Analista de Reservatórios",
-                      company: "lauOIL Energy & Sonangol",
-                    })
-                  }
-                  className="w-full p-2.5 rounded-xl bg-stone-950/80 border border-amber-500/30 hover:border-amber-500 hover:bg-stone-800 transition flex items-center gap-3 text-left group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center shrink-0 font-bold text-xs">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-stone-200 group-hover:text-amber-400 transition truncate">
-                      Eng. Sabino Laurindo
-                    </div>
-                    <div className="text-[10px] text-stone-400 truncate">
-                      sabino@lauoil.ao (Administrador Titular)
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() =>
-                    handleSelectQuickAccount({
-                      id: "usr-beatriz",
-                      name: "Dra. Beatriz Santos",
-                      email: "beatriz.santos@lauoil.ao",
-                      role: "Directora de Inteligência de Mercado",
-                      company: "OIetro Analytics",
-                    })
-                  }
-                  className="w-full p-2.5 rounded-xl bg-stone-950/80 border border-stone-800 hover:border-stone-700 hover:bg-stone-800 transition flex items-center gap-3 text-left group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0 font-bold text-xs">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-stone-200 group-hover:text-emerald-400 transition truncate">
-                      Dra. Beatriz Santos
-                    </div>
-                    <div className="text-[10px] text-stone-400 truncate">
-                      beatriz.santos@lauoil.ao (Directora de Mercado)
-                    </div>
-                  </div>
-                </button>
-              </div>
+            {/* Account Creation & Login Prompt */}
+            <div className="pt-2 border-t border-stone-800/80">
+              <button
+                type="button"
+                onClick={onOpenAuthModal}
+                className="w-full py-2.5 rounded-xl bg-stone-900 border border-stone-800 hover:border-amber-500/50 text-stone-300 hover:text-amber-400 font-mono text-xs flex items-center justify-center gap-2 transition"
+              >
+                <UserCheck className="w-4 h-4 text-amber-400" />
+                <span>Criar Nova Conta / Entrar com Email</span>
+              </button>
             </div>
 
             <div className="text-center text-[10px] text-stone-500 font-mono pt-2">

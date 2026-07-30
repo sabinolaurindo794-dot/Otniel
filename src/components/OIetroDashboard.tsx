@@ -731,7 +731,7 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
               <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; padding-top: 4px;">Relatório de Análise Preditiva & Flutuação Padrão (Recharts Engine)</div>
             </div>
             <h1 style="margin: 12px 0 4px 0; color: #0f172a; font-size: 22px; font-weight: 800;">Análise Quantitativa de Flutuação Histórica dos Preços do Petróleo (${timeframe.toUpperCase()})</h1>
-            <p style="margin: 0; color: #64748b; font-size: 12px;">Elaborado para: <strong style="color: #0f172a;">${persona.toUpperCase()} — Eng. Sabino Laurindo</strong> • Análise de Séries Temporais em Tempo Real</p>
+            <p style="margin: 0; color: #64748b; font-size: 12px;">Elaborado para: <strong style="color: #0f172a;">${persona.toUpperCase()} — Sabino Laurindo</strong> • Análise de Séries Temporais em Tempo Real</p>
           </div>
           <div style="text-align: right; font-size: 11px; color: #475569; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <div><strong>RefDoc:</strong> LAUOIL-DATA-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}</div>
@@ -822,7 +822,7 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
         <!-- RODAPÉ -->
         <div style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 15px; font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
           <div><strong>lauOIL Platform & Otniel AI Engine</strong> • Análise Técnica Integrada com Recharts</div>
-          <div>Assinado Digitalmente por: <strong>Eng. Sabino Laurindo</strong></div>
+          <div>Assinado Digitalmente por: <strong>Sabino Laurindo</strong></div>
         </div>
       </div>
     `;
@@ -1010,7 +1010,7 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
                 <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; padding-top: 4px;">Plataforma de Inteligência Petrolífera & Analytics</div>
               </div>
               <h1 style="margin: 12px 0 4px 0; color: #0f172a; font-size: 22px; font-weight: 800;">${reportTitle}</h1>
-              <p style="margin: 0; color: #64748b; font-size: 12px;">Elaborado para: <strong style="color: #0f172a;">${persona.toUpperCase()} — Eng. Sabino Laurindo</strong> • Sistema Otniel AI Engine</p>
+              <p style="margin: 0; color: #64748b; font-size: 12px;">Elaborado para: <strong style="color: #0f172a;">${persona.toUpperCase()} — Sabino Laurindo</strong> • Sistema Otniel AI Engine</p>
               <div style="margin-top: 6px; display: inline-block; background: #fffbebf5; border: 1px solid #fef3c7; color: #b45309; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px;">
                 📅 Data Solicitada do Mercado: <strong>${requestedReportDate}</strong>
               </div>
@@ -1223,7 +1223,7 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
               <strong>lauOIL Platform &amp; Otniel AI Engine</strong> • Certificação de Dados Petrolíferos
             </div>
             <div>
-              Assinado Digitalmente por: <strong>Eng. Sabino Laurindo</strong>
+              Assinado Digitalmente por: <strong>Sabino Laurindo</strong>
             </div>
           </div>
 
@@ -3388,7 +3388,7 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Eng. Carlos Neto"
+                    placeholder="Ex: Carlos Neto"
                     value={newContactForm.name}
                     onChange={(e) => setNewContactForm({ ...newContactForm, name: e.target.value })}
                     className="w-full p-2.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-100 focus:outline-none focus:border-amber-500 font-sans"

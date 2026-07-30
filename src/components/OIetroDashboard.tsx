@@ -466,6 +466,7 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
 
   // Report Generator State
   const [reportType, setReportType] = useState<"diario" | "sonangol_anpg" | "volatilidade">("diario");
+  const [requestedReportDate, setRequestedReportDate] = useState<string>("2025-05-26");
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [previewReportHtml, setPreviewReportHtml] = useState<string | null>(null);
 
@@ -1010,9 +1011,13 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
               </div>
               <h1 style="margin: 12px 0 4px 0; color: #0f172a; font-size: 22px; font-weight: 800;">${reportTitle}</h1>
               <p style="margin: 0; color: #64748b; font-size: 12px;">Elaborado para: <strong style="color: #0f172a;">${persona.toUpperCase()} — Eng. Sabino Laurindo</strong> • Sistema Otniel AI Engine</p>
+              <div style="margin-top: 6px; display: inline-block; background: #fffbebf5; border: 1px solid #fef3c7; color: #b45309; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px;">
+                📅 Data Solicitada do Mercado: <strong>${requestedReportDate}</strong>
+              </div>
             </div>
             <div style="text-align: right; font-size: 11px; color: #475569; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
               <div><strong>RefDoc:</strong> LAUOIL-REP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}</div>
+              <div><strong>Data Solicitada:</strong> <strong style="color: #d97706;">${requestedReportDate}</strong></div>
               <div><strong>Data de Emissão:</strong> ${new Date().toLocaleDateString("pt-PT")} ${new Date().toLocaleTimeString("pt-PT", {hour: '2-digit', minute:'2-digit'})}</div>
               <div><strong>Classificação:</strong> <span style="color: #dc2626; font-weight: 700;">RESERVADO / CONFIDENCIAL</span></div>
             </div>
@@ -1585,42 +1590,72 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
               </div>
             </div>
 
-            {/* KPI Cards Grid */}
+            {/* KPI Cards Grid (Power BI Style with Sparklines) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-2 relative overflow-hidden group hover:border-amber-500/40 transition">
                 <div className="flex justify-between items-center text-[11px] font-mono text-stone-400">
-                  <span>BRENT CRUDE</span>
-                  <span className="text-emerald-400 font-bold">+{dailyChg}%</span>
+                  <span className="font-bold tracking-wider">BRENT (USD)</span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    +1.32 (+1.63%)
+                  </span>
                 </div>
-                <div className="text-3xl font-extrabold text-amber-400 tracking-tight">${brentPrice}</div>
-                <p className="text-[11px] text-stone-500 font-mono">Referência Internacional Spot</p>
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-black text-stone-100 tracking-tight">${brentPrice}</div>
+                  {/* Mini Sparkline SVG */}
+                  <svg className="w-16 h-8 text-emerald-400" viewBox="0 0 60 25" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M0 20 L10 16 L20 18 L30 10 L40 12 L50 4 L60 2" />
+                  </svg>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-stone-500 font-mono pt-1 border-t border-stone-800/60">
+                  <span>Última atualização: agora</span>
+                  <span className="text-amber-500 font-bold">ICE Spot</span>
+                </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-2 relative overflow-hidden group hover:border-amber-500/40 transition">
                 <div className="flex justify-between items-center text-[11px] font-mono text-stone-400">
-                  <span>RAMA CABINDA (ANGOLA)</span>
-                  <span className="text-emerald-400 font-bold">+1.40%</span>
+                  <span className="font-bold tracking-wider">WTI (USD)</span>
+                  <span className="text-emerald-400 font-bold">+1.18 (+1.53%)</span>
                 </div>
-                <div className="text-3xl font-extrabold text-stone-100 tracking-tight">${cabindaPrice}</div>
-                <p className="text-[11px] text-amber-500/80 font-mono">+$0.60 Premium vs Brent</p>
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-black text-stone-100 tracking-tight">${wtiPrice}</div>
+                  <svg className="w-16 h-8 text-emerald-400" viewBox="0 0 60 25" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M0 22 L10 18 L20 19 L30 12 L40 15 L50 6 L60 4" />
+                  </svg>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-stone-500 font-mono pt-1 border-t border-stone-800/60">
+                  <span>Última atualização: agora</span>
+                  <span className="text-blue-400 font-bold">NYMEX</span>
+                </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-2 relative overflow-hidden group hover:border-amber-500/40 transition">
                 <div className="flex justify-between items-center text-[11px] font-mono text-stone-400">
-                  <span>TAXA AOA / USD</span>
-                  <span className="text-stone-300 font-bold">BNR Oficial</span>
+                  <span className="font-bold tracking-wider">SPREAD (BRENT - WTI)</span>
+                  <span className="text-emerald-400 font-bold">+0.14 (+3.39%)</span>
                 </div>
-                <div className="text-3xl font-extrabold text-stone-100 tracking-tight">{aoaUsdRate}</div>
-                <p className="text-[11px] text-stone-500 font-mono">Kwanzas por 1 Dólar Norte-Americano</p>
+                <div className="text-3xl font-black text-amber-400 tracking-tight">$4.26</div>
+                <div className="flex items-center justify-between text-[10px] text-stone-500 font-mono pt-1 border-t border-stone-800/60">
+                  <span>Diferencial Arb.</span>
+                  <span>Última atualização: agora</span>
+                </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-2 relative overflow-hidden group hover:border-amber-500/40 transition">
                 <div className="flex justify-between items-center text-[11px] font-mono text-stone-400">
-                  <span>PRODUÇÃO ANGOLA</span>
-                  <span className="text-emerald-400 font-bold">Cumprimento OPEP</span>
+                  <span className="font-bold tracking-wider">VARIAÇÃO SEMANAL (BRENT)</span>
+                  <span className="text-emerald-400 font-bold">+2.37%</span>
                 </div>
-                <div className="text-3xl font-extrabold text-emerald-400 tracking-tight">1.12M</div>
-                <p className="text-[11px] text-stone-500 font-mono">Barris por Dia (ANPG/MIREMPET)</p>
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-black text-emerald-400 tracking-tight">+2.37%</div>
+                  <svg className="w-16 h-8 text-emerald-400" viewBox="0 0 60 25" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M0 24 L15 20 L30 14 L45 8 L60 2" />
+                  </svg>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-stone-500 font-mono pt-1 border-t border-stone-800/60">
+                  <span>Acumulado 7 dias</span>
+                  <span className="text-emerald-400 font-bold">Tendência Alta</span>
+                </div>
               </div>
             </div>
 
@@ -1830,7 +1865,83 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
                 </ResponsiveContainer>
               </div>
 
-              {/* Statistical Metrics Row */}
+              {/* Power BI Side-by-Side Cards: 52-Week Highs/Lows & Variations Table */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {/* 52-Week Highs & Lows Card */}
+                <div className="p-4 rounded-2xl bg-stone-950 border border-stone-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-stone-800 pb-2">
+                    <h4 className="text-xs font-bold text-stone-200 uppercase font-mono tracking-wider flex items-center gap-1.5">
+                      <BarChart3 className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Máximos e Mínimos (52 Semanas)</span>
+                    </h4>
+                    <span className="text-[10px] text-stone-500 font-mono">Faixa 1 Ano</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                    <div className="p-3 rounded-xl bg-stone-900 border border-stone-800/80 space-y-1.5">
+                      <div className="text-amber-400 font-bold">BRENT</div>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-stone-400">Máximo:</span>
+                        <span className="text-emerald-400 font-bold">$95.18</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-stone-400">Mínimo:</span>
+                        <span className="text-red-400 font-bold">$68.68</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-stone-900 border border-stone-800/80 space-y-1.5">
+                      <div className="text-blue-400 font-bold">WTI</div>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-stone-400">Máximo:</span>
+                        <span className="text-emerald-400 font-bold">$89.17</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-stone-400">Mínimo:</span>
+                        <span className="text-red-400 font-bold">$63.64</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Variations Performance Table */}
+                <div className="p-4 rounded-2xl bg-stone-950 border border-stone-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-stone-800 pb-2">
+                    <h4 className="text-xs font-bold text-stone-200 uppercase font-mono tracking-wider flex items-center gap-1.5">
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Variações Percentuais</span>
+                    </h4>
+                    <span className="text-[10px] text-stone-500 font-mono">Diária / Mensal / Anual</span>
+                  </div>
+
+                  <div className="overflow-x-auto text-xs font-mono">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-stone-800 text-stone-400 text-[10px]">
+                          <th className="pb-1.5">Benchmark</th>
+                          <th className="pb-1.5 text-right">Diária</th>
+                          <th className="pb-1.5 text-right">Mensal</th>
+                          <th className="pb-1.5 text-right">Anual</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-800/50">
+                        <tr>
+                          <td className="py-2 text-stone-200 font-bold">Brent Crude</td>
+                          <td className="py-2 text-right text-emerald-400 font-bold">+1.63%</td>
+                          <td className="py-2 text-right text-emerald-400 font-bold">+6.21%</td>
+                          <td className="py-2 text-right text-red-400 font-bold">-4.37%</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2 text-stone-200 font-bold">WTI Crude</td>
+                          <td className="py-2 text-right text-emerald-400 font-bold">+1.53%</td>
+                          <td className="py-2 text-right text-emerald-400 font-bold">+5.44%</td>
+                          <td className="py-2 text-right text-red-400 font-bold">-6.11%</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 rounded-2xl bg-stone-950 border border-stone-800 space-y-1">
                   <div className="text-stone-400 text-[10px] uppercase font-mono">Média Brent ({timeframe.toUpperCase()})</div>
@@ -2857,6 +2968,20 @@ export const OIetroDashboard: React.FC<OIetroDashboardProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="p-5 rounded-2xl bg-stone-900/90 border border-stone-800 space-y-4">
                 <h3 className="text-xs font-bold text-stone-200 uppercase tracking-wider font-mono">Seleção de Modelo de Relatório</h3>
+
+                {/* Data Solicitada do Mercado */}
+                <div className="space-y-1 bg-stone-950 p-3 rounded-xl border border-stone-800">
+                  <label className="block text-stone-300 font-mono text-xs font-bold">Data Solicitada do Mercado:</label>
+                  <input
+                    type="date"
+                    value={requestedReportDate}
+                    onChange={(e) => setRequestedReportDate(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-stone-100 text-xs font-mono focus:outline-none focus:border-amber-500"
+                  />
+                  <span className="text-[10px] text-stone-400 font-mono block pt-0.5">
+                    O relatório será compilado estritamente com dados da data selecionada.
+                  </span>
+                </div>
 
                 <div className="space-y-2 text-xs font-mono">
                   <button

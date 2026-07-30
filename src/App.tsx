@@ -124,6 +124,7 @@ export default function App() {
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAppLocked, setIsAppLocked] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     try {
       const saved = localStorage.getItem("otniel_user");
@@ -132,9 +133,9 @@ export default function App() {
     return {
       id: "usr-admin-default",
       name: "Eng. Sabino Laurindo",
-      email: "sabino@otniel.ao",
+      email: "sabino@lauoil.ao",
       role: "Administrador & Analista de Reservatórios",
-      company: "Otniel Energy & Sonangol",
+      company: "lauOIL Energy & Sonangol",
     };
   });
   const [isStreaming, setIsStreaming] = useState(false);
@@ -479,7 +480,16 @@ export default function App() {
   };
 
   return (
-    <SecurityShield currentUser={currentUser}>
+    <SecurityShield
+      currentUser={currentUser}
+      isAppLocked={isAppLocked}
+      onUnlockApp={() => setIsAppLocked(false)}
+      onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      onLoginSuccess={(user) => {
+        setCurrentUser(user);
+        setIsAppLocked(false);
+      }}
+    >
       <div className="flex h-screen w-screen overflow-hidden bg-stone-100 dark:bg-stone-950 font-sans text-stone-900 dark:text-stone-100 antialiased">
       {/* Sidebar Navigation */}
       <Sidebar
@@ -527,6 +537,7 @@ export default function App() {
           onSelectLanguage={(lang) => setCurrentLanguage(lang)}
           currentUser={currentUser}
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onLockApp={() => setIsAppLocked(true)}
           theme={theme}
           onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
         />

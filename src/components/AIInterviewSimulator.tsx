@@ -365,16 +365,18 @@ export const AIInterviewSimulator: React.FC<AIInterviewSimulatorProps> = ({
     cvText?: string;
     jobDescription?: string;
   }) => {
-    const finalCv = overrideParams?.cvText || cvText;
-    const finalJob = overrideParams?.jobDescription || jobDescription;
-    const finalName = overrideParams?.candidateName || candidateName;
-    const finalRole = overrideParams?.targetRole || targetRole;
-    const finalCompany = overrideParams?.companyName || companyName;
+    const finalCv = (overrideParams?.cvText || cvText || "").trim() || SAMPLE_CVS[0].cv;
+    const finalJob = (overrideParams?.jobDescription || jobDescription || "").trim() || SAMPLE_CVS[0].job;
+    const finalName = (overrideParams?.candidateName || candidateName || "").trim() || "Eng. Manuel Silva";
+    const finalRole = (overrideParams?.targetRole || targetRole || "").trim() || "Engenheiro de Reservatórios Sénior";
+    const finalCompany = (overrideParams?.companyName || companyName || "").trim() || "Sonangol E.P. / Consórcio Offshore";
 
-    if (!finalCv.trim() || !finalJob.trim()) {
-      alert("Por favor forneça o CV e a Descrição da Vaga para personalizar a entrevista.");
-      return;
-    }
+    // Update local state if auto-filled
+    if (!cvText.trim()) setCvText(finalCv);
+    if (!jobDescription.trim()) setJobDescription(finalJob);
+    if (!candidateName.trim()) setCandidateName(finalName);
+    if (!targetRole.trim()) setTargetRole(finalRole);
+    if (!companyName.trim()) setCompanyName(finalCompany);
 
     setIsStartingInterview(true);
     try {

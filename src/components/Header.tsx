@@ -13,6 +13,7 @@ import {
   Globe,
   Sun,
   Moon,
+  Lock,
 } from "lucide-react";
 import { ModelId, Project } from "../types";
 import { AVAILABLE_MODELS } from "../data/promptPresets";
@@ -35,6 +36,7 @@ interface HeaderProps {
   onSelectLanguage?: (lang: Language) => void;
   currentUser?: UserProfile | null;
   onOpenAuthModal?: () => void;
+  onLockApp?: () => void;
   theme?: "dark" | "light";
   onToggleTheme?: () => void;
 }
@@ -54,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectLanguage,
   currentUser,
   onOpenAuthModal,
+  onLockApp,
   theme = "dark",
   onToggleTheme,
 }) => {
@@ -266,6 +269,18 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           )}
         </button>
+
+        {/* Lock Application Session Button */}
+        {onLockApp && (
+          <button
+            onClick={onLockApp}
+            className="p-2 rounded-xl bg-stone-200/70 dark:bg-stone-900 border border-stone-300 dark:border-stone-800 text-stone-700 dark:text-stone-300 hover:text-amber-500 hover:border-amber-500/50 transition flex items-center gap-1.5 text-xs font-bold"
+            title="Bloquear Acesso à Aplicação (PIN/Senha)"
+          >
+            <Lock className="w-3.5 h-3.5 text-amber-500" />
+            <span className="hidden lg:inline">Bloquear</span>
+          </button>
+        )}
 
         {/* Login & Password / User Profile Button */}
         <button

@@ -333,6 +333,7 @@ export default function App() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder("utf-8");
       let accumulatedText = "";
+      let streamBuffer = "";
 
       if (reader) {
         let done = false;
@@ -341,15 +342,21 @@ export default function App() {
           done = readerDone;
 
           if (value) {
-            const chunkStr = decoder.decode(value, { stream: true });
-            const lines = chunkStr.split("\n");
+            streamBuffer += decoder.decode(value, { stream: true });
+            const lines = streamBuffer.split("\n");
+            // Keep incomplete line in streamBuffer
+            streamBuffer = lines.pop() || "";
 
             for (const line of lines) {
-              if (line.startsWith("data: ")) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith("data: ")) {
                 try {
-                  const json = JSON.parse(line.replace("data: ", ""));
+                  const rawJson = trimmed.slice(6).trim();
+                  if (!rawJson) continue;
+                  const json = JSON.parse(rawJson);
                   if (json.chunk) {
                     accumulatedText += json.chunk;
+                    const textToSet = accumulatedText;
 
                     // Update streaming message in real time
                     setConversations((prev) =>
@@ -357,7 +364,7 @@ export default function App() {
                         if (c.id === currentConvId) {
                           const msgs = c.messages.map((m) => {
                             if (m.id === assistantMessageId) {
-                              return { ...m, content: accumulatedText };
+                              return { ...m, content: textToSet };
                             }
                             return m;
                           });
@@ -369,13 +376,46 @@ export default function App() {
                   }
                   if (json.error) {
                     setApiError(json.error);
-                    accumulatedText += `\n\n*Error:* ${json.error}`;
+                    accumulatedText += `\n\n*Aviso de Erro:* ${json.error}`;
                   }
                 } catch (e) {
                   // ignore JSON parse stream chunks
                 }
               }
             }
+          }
+        }
+
+        // Flush remaining buffer line if any
+        if (streamBuffer.trim().startsWith("data: ")) {
+          try {
+            const rawJson = streamBuffer.trim().slice(6).trim();
+            const json = JSON.parse(rawJson);
+            if (json.chunk) {
+              accumulatedText += json.chunk;
+            }
+          } catch (e) {}
+        }
+      }
+
+      // If streaming returned no text (e.g. stream interruption), fallback to regular /api/chat
+      if (!accumulatedText.trim()) {
+        const fallbackRes = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: abortControllerRef.current?.signal,
+          body: JSON.stringify({
+            message: text,
+            history: formattedHistory,
+            systemInstruction,
+            model: selectedModel,
+            images: imagesPayload,
+          }),
+        });
+        if (fallbackRes.ok) {
+          const fallbackJson = await fallbackRes.json();
+          if (fallbackJson.text) {
+            accumulatedText = fallbackJson.text;
           }
         }
       }
